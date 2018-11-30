@@ -1,42 +1,50 @@
-#!/usr/bin/env python
-
-# Copyright 2015 Google Inc. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-
 import uuid
 
 from datetime import datetime
 from locust import HttpLocust, TaskSet, task
 
 
-class MetricsTaskSet(TaskSet):
-    _deviceid = None
-
+class AdminUserBehavior(TaskSet):
     def on_start(self):
-        self._deviceid = str(uuid.uuid4())
+        self.login()
 
-    @task(1)
+    def on_stop(self):
+        self.logout()
+
     def login(self):
-        self.client.post(
-            '/login', {"deviceid": self._deviceid})
+        self.client.post("/admin", {"username": "eli", "password": "password"})
 
-    @task(999)
-    def post_metrics(self):
-        self.client.post(
-            "/metrics", {"deviceid": self._deviceid, "timestamp": datetime.now()})
+    def logout(self):
+        self.client.post("https://qa20.educationdive.com/admin/logout/", {"username": "eli", "password": "password"})
 
 
-class MetricsLocust(HttpLocust):
-    task_set = MetricsTaskSet
+class WebUserBehavior(TaskSet):
+    @task(1)
+    def index(self):
+        self.client.get("/")
+
+    @task(2)
+    def library(self):
+        self.client.get("/library/")
+
+    @task(3)
+    def events(self):
+        self.client.get("/events/")
+
+    @task(4)
+    def events_search(self):
+        self.client.get("/events/?search=industry&month=Show+All")
+
+    @task(5)
+    def jobs(self):
+        self.client.get("/jobs/")
+
+    @task(6)
+    def jobs_search(self):
+        self.client.get("/jobs/?search=1&keywords=human&location=")
+
+
+class WebsiteUser(HttpLocust):
+    task_set = WebUserBehavior
+    min_wait = 5000
+    max_wait = 9000
